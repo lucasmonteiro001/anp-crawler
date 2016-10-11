@@ -9,6 +9,9 @@ var Crawler = require("simplecrawler"),
 var index = "http://www.anp.gov.br/preco/prc/Resumo_Semanal_Index.asp";
 var estado = "http://www.anp.gov.br/preco/prc/Resumo_Semanal_Estado.asp";
 
+var resumoEstado = "http://www.anp.gov.br/preco/prc/Resumo_Por_Estado_Index.asp";
+var resumoMunicipio = "http://www.anp.gov.br/preco/prc/Resumo_Por_Estado_Municipio.asp";
+
 var form = {
     selSemana:"903*de 02/10/2016 a 08/10/2016",
     desc_Semana:"de 02/10/2016 a 08/10/2016",
@@ -23,19 +26,16 @@ var form = {
 
 
 
-request.get(index , function (error, response, body) {
+request.get(resumoEstado , function (error, response, body) {
 
-    var cookie = response.headers["set-cookie"];
-    var totalD = 0;
-
-    request.post(index, {form: form}, function (error, response, body) {
+    request.post(resumoEstado, {form: form}, function (error, response, body) {
 
         var total = "";
 
-        request.get(estado).pipe(fs.createWriteStream('test.html'))
+        request.get(resumoMunicipio).pipe(fs.createWriteStream('porEstado.html'));
 
         request
-            .get(estado)
+            .get(resumoMunicipio)
             .on('error', function(err) {
                 console.log(err)
             })
@@ -46,8 +46,6 @@ request.get(index , function (error, response, body) {
             .on('data', function(d) {
                 // console.log(d.toString('utf8'))
                 // console.log(typeof d)
-                totalD++;
-
                 total += d.toString('utf8');
             })
             .on('end', function (response) {
@@ -58,7 +56,7 @@ request.get(index , function (error, response, body) {
                     function (err, window) {
                         var $ = window.$;
 
-                        var cols = $($('tr')[2]).find('th').length + 2; // 1 (estado), 1 (postos pesquisados);
+                        var cols = $($('tr')[2]).find('th').length + 2; // 1 (RESUMO_SEMANAL_ESTADO), 1 (postos pesquisados);
                         var lines = $('table tbody tr');
 
                         console.log("colunas:", cols, "linhas:", lines.length)
@@ -81,6 +79,10 @@ request.get(index , function (error, response, body) {
 
                             console.log(lineConcat, '\n');
                         }
+
+                        $('h3').map(function(i, h3) {
+                            console.log(h3.textContent);
+                        });
                     }
                 );
 
@@ -123,7 +125,7 @@ request.get(index , function (error, response, body) {
 
     });
 
-    // var crawler = new Crawler(index);
+    // var crawler = new Crawler(RESUMO_SEMANAL_INDEX);
     // crawler.maxDepth = 1;
     //
     // crawler.cookies.addFromHeaders(response.headers["set-cookie"]);
@@ -139,7 +141,7 @@ request.get(index , function (error, response, body) {
     // });
 });
 
-// request.get(index , function (error, response, body) {
+// request.get(RESUMO_SEMANAL_INDEX , function (error, response, body) {
 //     crawler.cookies.addFromHeaders(response.headers["set-cookie"]);
 //     crawler.start();
 // });
@@ -148,13 +150,13 @@ request.get(index , function (error, response, body) {
 //
 //     console.log("Fetched", queueItem.url);
 //
-//     var crawler2 = new Crawler(index);
+//     var crawler2 = new Crawler(RESUMO_SEMANAL_INDEX);
 //     crawler2.cookies = crawler.cookies;
 //     crawler2.maxDepth = 1;
 //
 //     crawler2.on("fetchcomplete", function (queueItem, responseBuffer, response) {
 //
-//         var crawler3 = new Crawler(estado);
+//         var crawler3 = new Crawler(RESUMO_SEMANAL_ESTADO);
 //         crawler3.cookies = crawler2.cookies;
 //         crawler3.maxDepth = 1;
 //
@@ -163,7 +165,7 @@ request.get(index , function (error, response, body) {
 //             console.log("Fetched", queueItem.url);
 //         });
 //
-//         request.get(estado,  function (error, response, body) {
+//         request.get(RESUMO_SEMANAL_ESTADO,  function (error, response, body) {
 //             crawler3.start();
 //             // console.log(crawler2.cookies);
 //         });
@@ -171,13 +173,13 @@ request.get(index , function (error, response, body) {
 //
 //     });
 //
-//     request.post(index , {form: form},  function (error, response, body) {
+//     request.post(RESUMO_SEMANAL_INDEX , {form: form},  function (error, response, body) {
 //         crawler2.start();
 //     });
 //
 // });
 
-// var crawler = new Crawler(index).on("fetchcomplete", function (queueItem, responseBody, responseObject) {
+// var crawler = new Crawler(RESUMO_SEMANAL_INDEX).on("fetchcomplete", function (queueItem, responseBody, responseObject) {
 //     console.log("Fetched a resource!")
 //     // console.log(queueItem);
 //     // console.log(responseBody);
