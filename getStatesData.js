@@ -45,7 +45,7 @@ var exec = function(callback) {
 
             var total = "";
 
-            request.get(RESUMO_SEMANAL_ESTADO).pipe(fs.createWriteStream('porGeral.html'));
+            // request.get(RESUMO_SEMANAL_ESTADO).pipe(fs.createWriteStream('porGeral.html'));
 
             request
                 .get(RESUMO_SEMANAL_ESTADO)
@@ -53,8 +53,7 @@ var exec = function(callback) {
                     console.log(err)
                 })
                 .on('response', function(response) {
-                    console.log(response.statusCode) // 200
-                    console.log(response.headers['content-type']) // 'image/png'
+                    console.log("statusCode:", response.statusCode);
                 })
                 .on('data', function(d) {
                     total += d.toString('utf8');
@@ -67,12 +66,7 @@ var exec = function(callback) {
                         function (err, window) {
 
                             var $ = window.$;
-                            var cols = $($('tr')[2]).find('th').length + 2; // 1 (RESUMO_SEMANAL_ESTADO), 1 (postos pesquisados);
                             var lines = $('table tbody tr');
-
-                            $('h3').map(function(i, h3) {
-                                console.log(h3.textContent);
-                            });
 
                             // ignora as 3 primeiras linhas, pois nao sao dados uteis
                             for(var i = 3; i < lines.length; i++) {

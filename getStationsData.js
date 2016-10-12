@@ -24,7 +24,7 @@ var exec = function (form, callback) {
 
     request.get(RESUMO_POR_ESTADO , function (error, response, body) {
 
-        request.post(RESUMO_SEMANAL_POSTO, {form: form}).pipe(fs.createWriteStream('porMunicipio.html'));
+        // request.post(RESUMO_SEMANAL_POSTO, {form: form}).pipe(fs.createWriteStream('porMunicipio.html'));
 
         var total = "";
 
@@ -33,8 +33,7 @@ var exec = function (form, callback) {
                 console.log(err)
             })
             .on('response', function(response) {
-                console.log(response.statusCode) // 200
-                console.log(response.headers['content-type']) // 'image/png'
+                console.log("statusCode:", response.statusCode);
             })
             .on('data', function(d) {
                 // console.log(d.toString('utf8'))
@@ -49,10 +48,7 @@ var exec = function (form, callback) {
                     function (err, window) {
                         var $ = window.$;
 
-                        var cols = $($('tr')[0]).find('th').length; // 1 (RESUMO_SEMANAL_ESTADO), 1 (postos pesquisados);
                         var lines = $('span#postos_nota_fiscal div table tbody tr');
-
-                        console.log("colunas:", cols, "linhas:", lines.length - 5);
 
                         // ignora as 3 primeiras linhas, pois nao sao dados uteis
                         for(var i = 1; i < lines.length - 5; i++) {

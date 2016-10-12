@@ -30,7 +30,7 @@ var exec = function (form, callback) {
 
             var total = "";
 
-            request.get(RESUMO_POR_ESTADO_MUNICIPIO).pipe(fs.createWriteStream('porEstado.html'));
+            // request.get(RESUMO_POR_ESTADO_MUNICIPIO).pipe(fs.createWriteStream('porEstado.html'));
 
             request
                 .get(RESUMO_POR_ESTADO_MUNICIPIO)
@@ -38,12 +38,9 @@ var exec = function (form, callback) {
                     console.log(err)
                 })
                 .on('response', function(response) {
-                    console.log(response.statusCode) // 200
-                    console.log(response.headers['content-type']) // 'image/png'
+                    console.log("statusCode:", response.statusCode);
                 })
                 .on('data', function(d) {
-                    // console.log(d.toString('utf8'))
-                    // console.log(typeof d)
                     total += d.toString('utf8');
                 })
                 .on('end', function (response) {
@@ -54,10 +51,7 @@ var exec = function (form, callback) {
                         function (err, window) {
                             var $ = window.$;
 
-                            var cols = $($('tr')[2]).find('th').length + 2; // 1 (RESUMO_SEMANAL_ESTADO), 1 (postos pesquisados);
                             var lines = $('table tbody tr');
-
-                            console.log("colunas:", cols, "linhas:", lines.length)
 
                             // ignora as 3 primeiras linhas, pois nao sao dados uteis
                             for(var i = 3; i < lines.length; i++) {
