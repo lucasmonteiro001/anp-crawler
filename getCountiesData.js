@@ -1,9 +1,13 @@
-var FUEL_CODES = require('./fuel_codes'),
-    STATE_CODES = require('./state_codes'),
-    COD_SEMANA = "903";
+var request = require("request").defaults({jar: true}),
+    fs = require('fs'),
+    jsdom = require('jsdom');
+
+
+var RESUMO_POR_ESTADO = "http://www.anp.gov.br/preco/prc/Resumo_Por_Estado_Index.asp",
+    RESUMO_POR_ESTADO_MUNICIPIO = "http://www.anp.gov.br/preco/prc/Resumo_Por_Estado_Municipio.asp";
 
 var TABLE_POSITION = {
-    estado: 0,
+    municipio: 0,
     postosPesquisados: 1,
     consumidorPrecoMedio: 2,
     consumidorDesvioPadrao: 3,
@@ -16,39 +20,20 @@ var TABLE_POSITION = {
     distribuidoraPrecoMaximo: 10
 };
 
-var request = require("request").defaults({jar: true}),
-    fs = require('fs'),
-    jsdom = require('jsdom');
+var exec = function (form, callback) {
 
-var RESUMO_SEMANAL_INDEX = "http://www.anp.gov.br/preco/prc/Resumo_Semanal_Index.asp";
-var RESUMO_SEMANAL_ESTADO = "http://www.anp.gov.br/preco/prc/Resumo_Semanal_Estado.asp";
-
-// TODO fazendo soh para gasolina por enquanto
-var form = {
-    selSemana: COD_SEMANA + "*",
-    desc_Semana:"",
-    cod_Semana: COD_SEMANA,
-    tipo:"2",
-    rdResumo:"2",
-    selEstado: STATE_CODES.acre,
-    selCombustivel: FUEL_CODES.gasolina.value,
-    txtValor:"",
-    image1:""
-};
-
-var exec = function(callback) {
     var array = [];
 
-    request.get(RESUMO_SEMANAL_INDEX , function (error, response, body) {
+    request.get(RESUMO_POR_ESTADO , function (error, response, body) {
 
-        request.post(RESUMO_SEMANAL_INDEX, {form: form}, function (error, response, body) {
+        request.post(RESUMO_POR_ESTADO, {form: form}, function (error, response, body) {
 
             var total = "";
 
-            request.get(RESUMO_SEMANAL_ESTADO).pipe(fs.createWriteStream('porGeral.html'));
+            request.get(RESUMO_POR_ESTADO_MUNICIPIO).pipe(fs.createWriteStream('porEstado.html'));
 
             request
-                .get(RESUMO_SEMANAL_ESTADO)
+                .get(RESUMO_POR_ESTADO_MUNICIPIO)
                 .on('error', function(err) {
                     console.log(err)
                 })
@@ -57,6 +42,8 @@ var exec = function(callback) {
                     console.log(response.headers['content-type']) // 'image/png'
                 })
                 .on('data', function(d) {
+                    // console.log(d.toString('utf8'))
+                    // console.log(typeof d)
                     total += d.toString('utf8');
                 })
                 .on('end', function (response) {
@@ -65,14 +52,12 @@ var exec = function(callback) {
                         total,
                         ["http://code.jquery.com/jquery.js"],
                         function (err, window) {
-
                             var $ = window.$;
+
                             var cols = $($('tr')[2]).find('th').length + 2; // 1 (RESUMO_SEMANAL_ESTADO), 1 (postos pesquisados);
                             var lines = $('table tbody tr');
 
-                            $('h3').map(function(i, h3) {
-                                console.log(h3.textContent);
-                            });
+                            console.log("colunas:", cols, "linhas:", lines.length)
 
                             // ignora as 3 primeiras linhas, pois nao sao dados uteis
                             for(var i = 3; i < lines.length; i++) {
@@ -99,10 +84,9 @@ var exec = function(callback) {
                                 }
 
                                 array.push(obj);
-
                             }
 
-                            callback(array);
+                            callback(array)
                         }
                     );
 
@@ -111,6 +95,7 @@ var exec = function(callback) {
         });
 
     });
+
 };
 
 module.exports = exec;
