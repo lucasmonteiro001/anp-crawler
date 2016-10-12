@@ -61,6 +61,8 @@ var exec = (function () {
                                         tds = $(line).find('td'),
                                         obj = {};
 
+                                    obj.type = form.selCombustivel.trim().split('*')[1];
+
                                     for(prop in TABLE_POSITION) {
 
                                         var index = TABLE_POSITION[prop];

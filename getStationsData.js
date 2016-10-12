@@ -57,6 +57,8 @@ var exec = function (form, callback) {
                                 tds = $(line).find('td'),
                                 obj = {};
 
+                            obj.type = form.desc_combustivel.trim().split(' ')[1];
+
                             for(prop in TABLE_POSITION) {
 
                                 var index = TABLE_POSITION[prop];

@@ -23,7 +23,7 @@ var exec = function (array, i) {
 
     (function (array, i) {
 
-        if(i >= array.length) {
+        if(i == 1 || i >= array.length) {
             fs.writeFile('./output.json', JSON.stringify(final), function (err) {
                 if(err) {
                     console.log(err);
@@ -49,12 +49,13 @@ var exec = function (array, i) {
                 tipo:"2",
                 rdResumo:"2",
                 selEstado: state.codigo,
-                selCombustivel: FUEL_CODES.gasolina,
+                selCombustivel: FUEL_CODES.gasolina.value,
                 txtValor:"",
                 image1:""
             };
             getCountiesData(formPerState, function (data) {
 
+                console.log(formPerState.selCombustivel);
                 console.log(formPerState.selEstado);
                 console.log(data.map(function (el, i) {
                     return el.municipio;
