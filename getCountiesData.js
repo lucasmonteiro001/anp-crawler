@@ -20,76 +20,78 @@ var TABLE_POSITION = {
     distribuidoraPrecoMaximo: 10
 };
 
-var exec = function (form, callback) {
+var exec = (function () {
+    return function (form, callback) {
 
-    var array = [];
+        var array = [];
 
-    request.get(RESUMO_POR_ESTADO , function (error, response, body) {
+        request.get(RESUMO_POR_ESTADO , function (error, response, body) {
 
-        request.post(RESUMO_POR_ESTADO, {form: form}, function (error, response, body) {
+            request.post(RESUMO_POR_ESTADO, {form: form}, function (error, response, body) {
 
-            var total = "";
+                var total = "";
 
-            // request.get(RESUMO_POR_ESTADO_MUNICIPIO).pipe(fs.createWriteStream('porEstado.html'));
+                // request.get(RESUMO_POR_ESTADO_MUNICIPIO).pipe(fs.createWriteStream('porEstado.html'));
 
-            request
-                .get(RESUMO_POR_ESTADO_MUNICIPIO)
-                .on('error', function(err) {
-                    console.log(err)
-                })
-                .on('response', function(response) {
-                    console.log("statusCode:", response.statusCode);
-                })
-                .on('data', function(d) {
-                    total += d.toString('utf8');
-                })
-                .on('end', function (response) {
+                request
+                    .get(RESUMO_POR_ESTADO_MUNICIPIO)
+                    .on('error', function(err) {
+                        console.log(err)
+                    })
+                    .on('response', function(response) {
+                        // console.log("statusCode:", response.statusCode);
+                    })
+                    .on('data', function(d) {
+                        total += d.toString('utf8');
+                    })
+                    .on('end', function (response) {
 
-                    jsdom.env(
-                        total,
-                        ["http://code.jquery.com/jquery.js"],
-                        function (err, window) {
-                            var $ = window.$;
+                        jsdom.env(
+                            total,
+                            ["http://code.jquery.com/jquery.js"],
+                            function (err, window) {
+                                var $ = window.$;
 
-                            var lines = $('table tbody tr');
+                                var lines = $('table tbody tr');
 
-                            // ignora as 3 primeiras linhas, pois nao sao dados uteis
-                            for(var i = 3; i < lines.length; i++) {
+                                // ignora as 3 primeiras linhas, pois nao sao dados uteis
+                                for(var i = 3; i < lines.length; i++) {
 
-                                var line = lines[i],
-                                    tds = $(line).find('td'),
-                                    obj = {};
+                                    var line = lines[i],
+                                        tds = $(line).find('td'),
+                                        obj = {};
 
-                                for(prop in TABLE_POSITION) {
+                                    for(prop in TABLE_POSITION) {
 
-                                    var index = TABLE_POSITION[prop];
+                                        var index = TABLE_POSITION[prop];
 
-                                    if(index === 0) {
+                                        if(index === 0) {
 
-                                        var td = $(tds[index]),
-                                            a = td.find('a')[0];
+                                            var td = $(tds[index]),
+                                                a = td.find('a')[0];
 
-                                        obj[prop] = a.textContent;
-                                        obj["codigo"] = a.href.split('(')[1].split(')')[0].replace(/\'/g, "");
+                                            obj[prop] = a.textContent;
+                                            obj["codigo"] = a.href.split('(')[1].split(')')[0].replace(/\'/g, "");
+                                        }
+                                        else {
+                                            obj[prop] = tds[index].textContent;
+                                        }
                                     }
-                                    else {
-                                        obj[prop] = tds[index].textContent;
-                                    }
+
+                                    array.push(obj);
                                 }
 
-                                array.push(obj);
+                                callback(array)
                             }
+                        );
 
-                            callback(array)
-                        }
-                    );
+                    });
 
-                });
+            });
 
         });
 
-    });
-
-};
+    };
+})();
 
 module.exports = exec;

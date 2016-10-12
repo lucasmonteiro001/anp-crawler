@@ -53,7 +53,7 @@ var exec = function(callback) {
                     console.log(err)
                 })
                 .on('response', function(response) {
-                    console.log("statusCode:", response.statusCode);
+                    // console.log("statusCode:", response.statusCode);
                 })
                 .on('data', function(d) {
                     total += d.toString('utf8');

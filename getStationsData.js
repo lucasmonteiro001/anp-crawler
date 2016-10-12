@@ -33,7 +33,7 @@ var exec = function (form, callback) {
                 console.log(err)
             })
             .on('response', function(response) {
-                console.log("statusCode:", response.statusCode);
+                // console.log("statusCode:", response.statusCode);
             })
             .on('data', function(d) {
                 // console.log(d.toString('utf8'))
@@ -66,7 +66,12 @@ var exec = function (form, callback) {
                                     var td = $(tds[index]),
                                         a = td.find('a')[0];
 
-                                    obj[prop] = a.textContent;
+                                    try {
+                                        obj[prop] = a.textContent;
+                                    }
+                                    catch (e) {
+                                        obj[prop] = "-";
+                                    }
                                 }
                                 else {
                                     obj[prop] = tds[index].textContent;

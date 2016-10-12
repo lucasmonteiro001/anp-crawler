@@ -9,18 +9,38 @@ var fs = require('fs');
 var FUEL_CODES = require('./fuel_codes'),
     COD_SEMANA = "903";
 
+
+var final = [];
+
 getStatesData(function (array) {
 
-    // FIXME colocar array.length
-    for(var i = 0; i < 2; i++) {
+    console.time('start');
+    exec(array, 0);
 
-        (function (i) {
+});
 
-            console.log(i)
+var exec = function (array, i) {
 
-            var state = array[i];
+    (function (array, i) {
 
-            state.cities = [];
+        if(i >= array.length) {
+            fs.writeFile('./output.json', JSON.stringify(final), function (err) {
+                if(err) {
+                    console.log(err);
+                }
+                else {
+                    console.log('fim');
+                    console.timeEnd('start');
+                }
+            });
+            return;
+        }
+
+        var state = array[i];
+
+        state.cities = [];
+
+        (function (state) {
 
             var formPerState = {
                 selSemana: COD_SEMANA + "*",
@@ -33,50 +53,57 @@ getStatesData(function (array) {
                 txtValor:"",
                 image1:""
             };
-
             getCountiesData(formPerState, function (data) {
 
+                console.log(formPerState.selEstado);
+                console.log(data.map(function (el, i) {
+                    return el.municipio;
+                }));
+
                 if(data) {
+
                     state.cities = data;
+
+                    var count = state.cities.length;
 
                     for(var j = 0; j < state.cities.length; j++) {
 
-                        var formPerCounty = {
-                            cod_Semana: COD_SEMANA,
-                            desc_Semana:"de 02/10/2016 a 08/10/2016",
-                            cod_combustivel: FUEL_CODES.gasolina.id,
-                            desc_combustivel: FUEL_CODES.gasolina.desc,
-                            selMunicipio: state.cities[j].codigo,
-                            tipo:"1"
-                        };
+                        (function (state, j) {
 
-                        (function (j) {
+                            var formPerCounty = {
+                                cod_Semana: COD_SEMANA,
+                                desc_Semana:"de 02/10/2016 a 08/10/2016",
+                                cod_combustivel: FUEL_CODES.gasolina.id,
+                                desc_combustivel: FUEL_CODES.gasolina.desc,
+                                selMunicipio: state.cities[j].codigo,
+                                tipo:"1"
+                            };
+
                             getStationsData(formPerCounty, function (stations) {
 
                                 state.cities[j].stations = stations || [];
 
-                                fs.writeFile('./output.json', JSON.stringify(state), function (err) {
+                                count--;
 
-                                    if(err) {
-                                        console.log(err);
+                                if(count === 0) {
+                                    if(i <= array.length) {
+
+                                        final.push(state);
+                                        exec(array, ++i);
                                     }
                                     else {
-                                        console.log("Arquivo (" + state.estado + ") salvo com sucesso!");
+                                      throw Error('should not be here');
                                     }
+                                }
 
-                                });
                             });
-                        })(j);
-
+                        })(state, j);
 
                     }
                 }
 
             });
 
-        })(i);
-
-
-    }
-
-});
+        })(state);
+    })(array, i);
+};
