@@ -3,6 +3,8 @@
  */
 var getStatesData = require('./getStatesData');
 var getCountiesData = require('./getCountiesData');
+var getStationsData = require('./getStationsData');
+var fs = require('fs');
 
 var FUEL_CODES = require('./fuel_codes'),
     COD_SEMANA = "903";
@@ -10,7 +12,7 @@ var FUEL_CODES = require('./fuel_codes'),
 getStatesData(function (array) {
 
     // FIXME colocar array.length
-    for(var i = 0; i < 1; i++) {
+    for(var i = 0; i < 2; i++) {
 
         var state = array[i];
 
@@ -32,9 +34,40 @@ getStatesData(function (array) {
 
             if(data) {
                 state.cities = data;
+
+                for(var j = 0; j < state.cities.length; j++) {
+
+                    var formPerCounty = {
+                        cod_Semana: COD_SEMANA,
+                        desc_Semana:"de 02/10/2016 a 08/10/2016",
+                        cod_combustivel: FUEL_CODES.gasolina.id,
+                        desc_combustivel: FUEL_CODES.gasolina.desc,
+                        selMunicipio: state.cities[j].codigo,
+                        tipo:"1"
+                    };
+
+                    (function (j) {
+                        getStationsData(formPerCounty, function (stations) {
+
+                            state.cities[j].stations = stations || [];
+
+                            fs.writeFile('./output.json', JSON.stringify(state), function (err) {
+
+                                if(err) {
+                                    console.log(err);
+                                }
+                                else {
+                                    console.log("Arquivo salvo com sucesso!");
+                                }
+
+                            });
+                        });
+                    })(j);
+
+
+                }
             }
 
-            console.log(state);
         });
     }
 
