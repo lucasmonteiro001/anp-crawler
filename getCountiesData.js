@@ -24,9 +24,8 @@ var TABLE_POSITION = {
 var exec = (function () {
     return function (form, callback) {
 
-        debug.start('getCountiesData()');
+        debug.start('getCountiesData() -> %s', form.selEstado);
         debug.app('fuel %s', form.selCombustivel);
-        debug.app('state %s', form.selEstado);
 
         var request = require("request").defaults({jar: true}),
             jsdom = require('jsdom');
@@ -95,7 +94,7 @@ var exec = (function () {
                                     return el.municipio;
                                 }));
 
-                                debug.end('getCountiesData()');
+                                debug.end('getCountiesData() -> %s', form.selEstado);
 
                                 callback(array)
                             }

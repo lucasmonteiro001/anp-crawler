@@ -28,7 +28,7 @@ var exec = (function(){
 
         var array = [];
 
-        debug.start('getStationsData()');
+        debug.start('getStationsData() -> %s', form.selMunicipio);
         debug.http('GET %s', RESUMO_POR_ESTADO);
 
         request.get(RESUMO_POR_ESTADO , function (error, response, body) {
@@ -93,7 +93,7 @@ var exec = (function(){
                                 array.push(obj);
                             }
 
-                            debug.end('getStationsData()');
+                            debug.end('getStationsData() -> %s', form.selMunicipio);
 
                             callback(array);
                         }
