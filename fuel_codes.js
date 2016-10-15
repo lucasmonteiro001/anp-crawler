@@ -5,40 +5,45 @@ var CODES = (function () {
 
     return {
         diesel: {
+            id: '1',
             name : 'Diesel',
             value: '532*Diesel',
             desc : ' - Diesel R$/l',
-            id   : '532'
+            web_id   : '532'
         },
         diesels10: {
             name : 'Diesel S10',
             value: '812*Diesel@S10',
             desc : ' - Diesel S10 R$/l',
-            id   : '812'
+            web_id   : '812'
         },
         etanol: {
+            id: '2',
             name : 'Etanol',
             value: '643*Etanol',
-            desc : ' - Etanol R$/l',
-            id   : '643'
+                desc : ' - Etanol R$/l',
+            web_id   : '643'
         },
         gasolina: {
+            id: '3',
             name : 'Gasolina',
             value: '487*Gasolina',
             desc : ' - Gasolina R$/l',
-            id   : '487'
+            web_id   : '487'
         },
         glp: {
+            id: '4',
             name : 'GLP',
             value: '462*GLP',
             desc : ' - GLP R$/13kg',
-            id   : '462'
+            web_id   : '462'
         },
         gnv: {
+            id: '5',
             name: 'GNV',
             value: '476*GNV',
             desc : ' - GNV R$/m3',
-            id   : '476'
+            web_id   : '476'
         }
     }
 
