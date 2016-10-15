@@ -7,12 +7,25 @@ var getStationsData = require('./getStationsData');
 var fs = require('fs');
 
 var FUEL_CODES = require('./fuel_codes'),
-    COD_SEMANA = "903";
+    COD_SEMANA = "903",
+    STATE_CODES = require('./state_codes');
 
 
 var final = [];
 
-getStatesData(function (array) {
+var form = {
+    selSemana: COD_SEMANA + "*",
+    desc_Semana:"",
+    cod_Semana: COD_SEMANA,
+    tipo:"2",
+    rdResumo:"2",
+    selEstado: STATE_CODES.acre,
+    selCombustivel: FUEL_CODES.gasolina.value,
+    txtValor:"",
+    image1:""
+};
+
+getStatesData(form, function (array) {
 
     console.time('start');
     exec(array, 0);
@@ -23,7 +36,7 @@ var exec = function (array, i) {
 
     (function (array, i) {
 
-        if(i == 1 || i >= array.length) {
+        if(i == 2 || i >= array.length) {
             fs.writeFile('./output.json', JSON.stringify(final), function (err) {
                 if(err) {
                     console.log(err);
