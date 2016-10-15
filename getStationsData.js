@@ -1,11 +1,14 @@
 var RESUMO_POR_ESTADO = "http://www.anp.gov.br/preco/prc/Resumo_Por_Estado_Index.asp",
-    RESUMO_SEMANAL_POSTO = "http://www.anp.gov.br/preco/prc/Resumo_Semanal_Posto.asp";
+    RESUMO_SEMANAL_POSTO = "http://www.anp.gov.br/preco/prc/Resumo_Semanal_Posto.asp",
+    FUEL_CODES = require('./fuel_codes');
 var debug = {
     http: require('debug')('http'),
     app: require('debug')('app'),
     start: require('debug')('start'),
-    end: require('debug')('end')
+    end: require('debug')('end'),
+    joker: require('debug')('joker')
 };
+
 
 var exec = (function(){
 
@@ -25,6 +28,11 @@ var exec = (function(){
             fornecedorBandeiraBranca: 7,
             dataColeta: 8
         };
+
+        // if it is GLP
+        // if(form.cod_combustivel === FUEL_CODES.glp.web_id) {
+            // debug.joker('glp');
+        // }
 
         var array = [];
 
@@ -87,6 +95,14 @@ var exec = (function(){
                                     }
                                     else {
                                         obj[prop] = tds[index].textContent;
+
+                                        // convert date
+                                        if(index === 8) {
+
+                                            var d = obj[prop].split('/');
+
+                                            obj[prop] = [d[2], d[1], d[0]].join('/');
+                                        }
                                     }
                                 }
 

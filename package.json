@@ -5,13 +5,15 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "debug": "DEBUG=* node index.js"
+    "debug": "DEBUG=* node index.js",
+    "db": "PGUSER=postgres PGPASSWORD=admin PGDATABASE=anp PGPORT=5432 node dbtest.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "cheerio": "^0.22.0",
     "fs": "0.0.1-security",
+    "pg": "^6.1.0",
     "request": "^2.75.0",
     "simplecrawler": "^1.0.1",
     "string_decoder": "^0.10.31"

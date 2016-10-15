@@ -45,6 +45,8 @@ var getState = (function () {
 
         pool.connect(function(err, client, done) {
 
+            debug.db('getState %s', name);
+
             client.query('SELECT * from states where name = $1', [name], function(err, result) {
                 //call `done()` to release the client back to the pool
                 done();
@@ -75,7 +77,7 @@ var insertState = (function () {
                     return console.error('error running query', err);
                 }
 
-                debug.db('%s inserted successfuly', name);
+                debug.db('%s inserted state successfuly', name);
             });
 
         })
@@ -88,6 +90,8 @@ var getCityByName = (function () {
     return function (name, callback) {
 
         pool.connect(function(err, client, done) {
+
+            debug.db('getCityByName %s', name);
 
             client.query('SELECT * from cities where name = $1', [name], function(err, result) {
                 //call `done()` to release the client back to the pool
@@ -135,6 +139,8 @@ var getFuelPriceByCity = (function () {
 
         pool.connect(function(err, client, done) {
 
+            debug.db('getFuelPriceByCity %s %s', fuelId, cityId);
+
             client.query('SELECT * from cities_fuels where fuel_id = $1 and city_id = $2 and from_date = $3 and to_date = $4;',
                 [fuelId, cityId, toDate(from), toDate(to)], function(err, result) {
 
@@ -159,8 +165,6 @@ var insertFuelPriceByCity = (function () {
 
         pool.connect(function(err, client, done) {
 
-            console.log(Number(city.consumidorPrecoMinimo.replace(',', '.')))
-
             client.query('INSERT INTO cities_fuels (fuel_id, city_id, consumer_price_avg, consumer_price_std_dev, ' +
                 'consumer_price_min, consumer_price_max, consumer_price_avg_margin, distribution_price_avg, ' +
                 'distribution_price_std_dev, distribution_price_min, distribution_price_max, from_date, to_date) ' +
@@ -178,7 +182,7 @@ var insertFuelPriceByCity = (function () {
                         return console.error('error running query', err);
                     }
 
-                    debug.db('%s %s inserted in cities_fueld successfuly');
+                    debug.db('%inserted in cities_fuels successfuly %s %s', city.municipio, fuel.name);
 
                     callback(result);
                 });
@@ -188,12 +192,127 @@ var insertFuelPriceByCity = (function () {
 
 })();
 
+var getStationByNameAndCity = (function () {
+
+    return function (city, name, callback) {
+
+        pool.connect(function(err, client, done) {
+
+            debug.db('getStationByNameAndCity %s', name);
+
+            client.query('SELECT * from stations where name = $1 and city_id = $2', [name, city.id], function(err, result) {
+                //call `done()` to release the client back to the pool
+                done();
+
+                if(err) {
+                    return console.error('error running query', err);
+                }
+
+                callback(result);
+            });
+
+        })
+    };
+
+})();
+
+var insertStationByNameAndCity = (function () {
+
+    return function (city, station, callback) {
+
+        pool.connect(function(err, client, done) {
+
+            client.query('INSERT INTO stations (city_id, name, address, area, flag) VALUES($1, $2, $3, $4, $5);',
+                [city.id, station.razaoSocial, station.endereco, station.bairro, station.bandeira], function(err, result) {
+
+                    //call `done()` to release the client back to the pool
+                    done();
+
+                    if(err) {
+                        return console.error('error running query', err);
+                    }
+
+                    debug.db('%s inserted station successfuly', station.razaoSocial);
+
+                    getStationByNameAndCity(city, station.razaoSocial, callback);
+                });
+
+        })
+    };
+
+})();
+
+var getFuelPriceByStation = (function () {
+
+    return function (fuelId, stationId, date, callback) {
+
+        pool.connect(function(err, client, done) {
+
+            debug.db('getFullPriceByStation %s %s', fuelId, stationId);
+
+            client.query('SELECT * from fuels_stations where fuel_id = $1 and station_id = $2 and date = $3;',
+                [fuelId, stationId, toDate(date)], function(err, result) {
+
+                    //call `done()` to release the client back to the pool
+                    done();
+
+                    if(err) {
+                        return console.error('error running query', err);
+                    }
+
+                    callback(result);
+                });
+
+        })
+    };
+
+})();
+
+var insertFuelPriceByStation = (function () {
+
+    return function (station, fuel, callback) {
+
+        pool.connect(function(err, client, done) {
+
+            client.query('INSERT INTO fuels_stations (fuel_id, station_id, type, sell_price, ' +
+                'buy_price, sale_mode, provider, date) ' +
+                'VALUES($1, $2, $3, $4, $5, $6, $7, $8);',
+                [fuel.id, station.id, station.type,
+                    toNumber(station.precoVenda), toNumber(station.precoCompra),
+                    station.modalidadeCompra, station.fornecedorBandeiraBranca, toDate(station.dataColeta)],
+                function(err, result) {
+
+                    //call `done()` to release the client back to the pool
+                    done();
+
+                    if(err) {
+                        return console.error('error running query', err);
+                    }
+
+                    debug.db('%s inserted in fuels_stations successfuly', station.id);
+
+                    if(callback) {
+                        callback(result);
+                    }
+
+                });
+
+        })
+    };
+
+})();
+
 var toDate = function (date) {
-    return new Date(date.replace('-','/')).toISOString();
+    return new Date(date.replace(/-/g,'/')).toISOString();
 };
 
 var toNumber = function (string) {
-    return Number(string.replace(',', '.'));
+
+    var n = Number(string.replace(',', '.'));
+
+    if(isNaN(n)) return -1;
+
+    return n;
 }
 
 module.exports = {
@@ -203,5 +322,9 @@ module.exports = {
     getCityByName: getCityByName,
     insertCity: insertCity,
     getFuelPriceByCity: getFuelPriceByCity,
-    insertFuelPriceByCity: insertFuelPriceByCity
+    insertFuelPriceByCity: insertFuelPriceByCity,
+    getStationByNameAndCity: getStationByNameAndCity,
+    insertStationByNameAndCity: insertStationByNameAndCity,
+    getFuelPriceByStation: getFuelPriceByStation,
+    insertFuelPriceByStation: insertFuelPriceByStation
 }
