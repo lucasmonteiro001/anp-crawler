@@ -1,8 +1,11 @@
-var request = require("request").defaults({jar: true}),
-    jsdom = require('jsdom');
-
 var RESUMO_SEMANAL_INDEX = "http://www.anp.gov.br/preco/prc/Resumo_Semanal_Index.asp";
 var RESUMO_SEMANAL_ESTADO = "http://www.anp.gov.br/preco/prc/Resumo_Semanal_Estado.asp";
+var debug = {
+    http: require('debug')('http'),
+    app: require('debug')('app'),
+    start: require('debug')('start'),
+    end: require('debug')('end')
+};
 
 var TABLE_POSITION = {
     estado: 0,
@@ -21,17 +24,26 @@ var TABLE_POSITION = {
 var exec = (function () {
     return function(form, callback) {
 
-        console.log('start - getStatesData');
+        var request = require("request").defaults({jar: true}),
+            jsdom = require('jsdom');
+
+        debug.start('getStatesData()');
+        debug.app('state %s', form.selEstado);
+        debug.app('fuel %s', form.selCombustivel);
 
         var array = [];
 
+        debug.http('GET %s', RESUMO_SEMANAL_INDEX);
+
         request.get(RESUMO_SEMANAL_INDEX , function (error, response, body) {
+
+            debug.http('POST %s', RESUMO_SEMANAL_INDEX);
 
             request.post(RESUMO_SEMANAL_INDEX, {form: form}, function (error, response, body) {
 
                 var total = "";
 
-                // request.get(RESUMO_SEMANAL_ESTADO).pipe(fs.createWriteStream('porGeral.html'));
+                debug.http('GET %s', RESUMO_SEMANAL_ESTADO);
 
                 request
                     .get(RESUMO_SEMANAL_ESTADO)
@@ -84,7 +96,7 @@ var exec = (function () {
 
                                 }
 
-                                console.log('end - getStatesData');
+                                debug.end('getStatesData()');
 
                                 callback(array);
                             }

@@ -14,5 +14,8 @@
     "request": "^2.75.0",
     "simplecrawler": "^1.0.1",
     "string_decoder": "^0.10.31"
+  },
+  "devDependencies": {
+    "debug": "^2.2.0"
   }
 }

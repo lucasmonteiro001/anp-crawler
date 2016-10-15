@@ -5,13 +5,24 @@ var getStatesData = require('./getStatesData');
 var getCountiesData = require('./getCountiesData');
 var getStationsData = require('./getStationsData');
 var fs = require('fs');
+var debug = {
+    http: require('debug')('http'),
+    app: require('debug')('app'),
+    start: require('debug')('start'),
+    end: require('debug')('end')
+};
 
 var FUEL_CODES = require('./fuel_codes'),
     COD_SEMANA = "903",
     STATE_CODES = require('./state_codes');
 
 
+debug.start('Initializing program');
+
 var final = [];
+
+var fuel = FUEL_CODES.gasolina;
+
 
 var form = {
     selSemana: COD_SEMANA + "*",
@@ -20,104 +31,103 @@ var form = {
     tipo:"2",
     rdResumo:"2",
     selEstado: STATE_CODES.acre,
-    selCombustivel: FUEL_CODES.gasolina.value,
+    selCombustivel: fuel.value,
     txtValor:"",
     image1:""
 };
 
-getStatesData(form, function (array) {
+getStatesData(form, function (statesData) {
 
-    console.time('start');
-    exec(array, 0);
+    exec(statesData, 0, fuel);
 
 });
 
-var exec = function (array, i) {
+var exec = (function () {
+    return (function (statesData, i, fuel) {
 
-    (function (array, i) {
+        (function (statesData, i, fuel) {
 
-        if(i == 2 || i >= array.length) {
-            fs.writeFile('./output.json', JSON.stringify(final), function (err) {
-                if(err) {
-                    console.log(err);
-                }
-                else {
-                    console.log('fim');
-                    console.timeEnd('start');
-                }
-            });
-            return;
-        }
+            // FIXME
+            if(i == 10 || i >= statesData.length) {
 
-        var state = array[i];
+                debug.start('Writing to file');
 
-        state.cities = [];
-
-        (function (state) {
-
-            var formPerState = {
-                selSemana: COD_SEMANA + "*",
-                desc_Semana: "",
-                cod_Semana: COD_SEMANA,
-                tipo:"2",
-                rdResumo:"2",
-                selEstado: state.codigo,
-                selCombustivel: FUEL_CODES.gasolina.value,
-                txtValor:"",
-                image1:""
-            };
-            getCountiesData(formPerState, function (data) {
-
-                console.log(formPerState.selCombustivel);
-                console.log(formPerState.selEstado);
-                console.log(data.map(function (el, i) {
-                    return el.municipio;
-                }));
-
-                if(data) {
-
-                    state.cities = data;
-
-                    var count = state.cities.length;
-
-                    for(var j = 0; j < state.cities.length; j++) {
-
-                        (function (state, j) {
-
-                            var formPerCounty = {
-                                cod_Semana: COD_SEMANA,
-                                desc_Semana:"de 02/10/2016 a 08/10/2016",
-                                cod_combustivel: FUEL_CODES.gasolina.id,
-                                desc_combustivel: FUEL_CODES.gasolina.desc,
-                                selMunicipio: state.cities[j].codigo,
-                                tipo:"1"
-                            };
-
-                            getStationsData(formPerCounty, function (stations) {
-
-                                state.cities[j].stations = stations || [];
-
-                                count--;
-
-                                if(count === 0) {
-                                    if(i <= array.length) {
-
-                                        final.push(state);
-                                        exec(array, ++i);
-                                    }
-                                    else {
-                                      throw Error('should not be here');
-                                    }
-                                }
-
-                            });
-                        })(state, j);
-
+                fs.writeFile('./output.json', JSON.stringify(final), function (err) {
+                    if(err) {
+                        console.log(err);
                     }
-                }
+                    else {
+                        debug.end('Finishing writing to file');
+                    }
+                });
+                debug.end('Finishing program');
+                return;
+            }
 
-            });
+            var state = statesData[i];
 
-        })(state);
-    })(array, i);
-};
+            state.cities = [];
+
+            (function (state) {
+
+                var formPerState = {
+                    selSemana: COD_SEMANA + "*",
+                    desc_Semana: "",
+                    cod_Semana: COD_SEMANA,
+                    tipo:"2",
+                    rdResumo:"2",
+                    selEstado: state.codigo,
+                    selCombustivel: fuel.value,
+                    txtValor:"",
+                    image1:""
+                };
+                getCountiesData(formPerState, function (data) {
+
+                    if(data) {
+
+                        state.cities = data;
+
+                        var count = state.cities.length;
+
+                        for(var j = 0; j < state.cities.length; j++) {
+
+                            (function (state, j) {
+
+                                var formPerCounty = {
+                                    cod_Semana: COD_SEMANA,
+                                    desc_Semana:"de 02/10/2016 a 08/10/2016",
+                                    cod_combustivel: FUEL_CODES.gasolina.id,
+                                    desc_combustivel: FUEL_CODES.gasolina.desc,
+                                    selMunicipio: state.cities[j].codigo,
+                                    tipo:"1"
+                                };
+
+                                getStationsData(formPerCounty, function (stations) {
+
+                                    state.cities[j].stations = stations || [];
+
+                                    count--;
+
+                                    if(count === 0) {
+                                        if(i <= statesData.length) {
+
+                                            final.push(state);
+                                            exec(statesData, ++i, fuel);
+                                        }
+                                        else {
+                                            throw Error('should not be here');
+                                        }
+                                    }
+
+                                });
+                            })(state, j);
+
+                        }
+                    }
+
+                });
+
+            })(state);
+        })(statesData, i, fuel);
+    });
+})();

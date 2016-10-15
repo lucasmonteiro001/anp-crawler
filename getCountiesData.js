@@ -1,10 +1,11 @@
-var request = require("request").defaults({jar: true}),
-    fs = require('fs'),
-    jsdom = require('jsdom');
-
-
 var RESUMO_POR_ESTADO = "http://www.anp.gov.br/preco/prc/Resumo_Por_Estado_Index.asp",
     RESUMO_POR_ESTADO_MUNICIPIO = "http://www.anp.gov.br/preco/prc/Resumo_Por_Estado_Municipio.asp";
+var debug = {
+    http: require('debug')('http'),
+    app: require('debug')('app'),
+    start: require('debug')('start'),
+    end: require('debug')('end')
+};
 
 var TABLE_POSITION = {
     municipio: 0,
@@ -22,6 +23,13 @@ var TABLE_POSITION = {
 
 var exec = (function () {
     return function (form, callback) {
+
+        debug.start('getCountiesData()');
+        debug.app('fuel %s', form.selCombustivel);
+        debug.app('state %s', form.selEstado);
+
+        var request = require("request").defaults({jar: true}),
+            jsdom = require('jsdom');
 
         var array = [];
 
@@ -82,6 +90,12 @@ var exec = (function () {
 
                                     array.push(obj);
                                 }
+
+                                debug.app(array.map(function (el, i) {
+                                    return el.municipio;
+                                }));
+
+                                debug.end('getCountiesData()');
 
                                 callback(array)
                             }
