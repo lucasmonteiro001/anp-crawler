@@ -1,31 +1,30 @@
-var RESUMO_SEMANAL_INDEX = "http://www.anp.gov.br/preco/prc/Resumo_Semanal_Index.asp";
-var RESUMO_SEMANAL_ESTADO = "http://www.anp.gov.br/preco/prc/Resumo_Semanal_Estado.asp";
-var debug = {
-    http: require('debug')('http'),
-    app: require('debug')('app'),
-    start: require('debug')('start'),
-    end: require('debug')('end')
-};
-
 var fs = require('fs'),
-    jquery = fs.readFileSync("./vendor/jquery-3.1.1.min.js", "utf-8");
+    jquery = fs.readFileSync("./vendor/jquery-3.1.1.min.js", "utf-8"),
+    debug = {
+        http: require('debug')('http'),
+        app: require('debug')('app'),
+        start: require('debug')('start'),
+        end: require('debug')('end')
+    };
 
-var TABLE_POSITION = {
-    estado: 0,
-    postosPesquisados: 1,
-    consumidorPrecoMedio: 2,
-    consumidorDesvioPadrao: 3,
-    consumidorPrecoMinimo: 4,
-    consumidorPrecoMaximo: 5,
-    margemMedia: 6,
-    distribuidoraPrecoMedio: 7,
-    distribuidoraDesvioPadrao: 8,
-    distribuidoraPrecoMinimo: 9,
-    distribuidoraPrecoMaximo: 10
-};
+var RESUMO_SEMANAL_INDEX = "http://www.anp.gov.br/preco/prc/Resumo_Semanal_Index.asp",
+    RESUMO_SEMANAL_ESTADO = "http://www.anp.gov.br/preco/prc/Resumo_Semanal_Estado.asp",
+    TABLE_POSITION = {
+        estado: 0,
+        postosPesquisados: 1,
+        consumidorPrecoMedio: 2,
+        consumidorDesvioPadrao: 3,
+        consumidorPrecoMinimo: 4,
+        consumidorPrecoMaximo: 5,
+        margemMedia: 6,
+        distribuidoraPrecoMedio: 7,
+        distribuidoraDesvioPadrao: 8,
+        distribuidoraPrecoMinimo: 9,
+        distribuidoraPrecoMaximo: 10
+    };
 
-var exec = (function () {
-    return function(form, callback) {
+module.exports =
+    function(form, callback) {
 
         var request = require("request").defaults({jar: true}),
             jsdom = require('jsdom');
@@ -38,16 +37,20 @@ var exec = (function () {
 
         debug.http('GET %s', RESUMO_SEMANAL_INDEX);
 
+        // make request to get session cookie
         request.get(RESUMO_SEMANAL_INDEX , function (error, response, body) {
 
             debug.http('POST %s', RESUMO_SEMANAL_INDEX);
 
+            // after getting session cookie, submit data to attach cookie to form
             request.post(RESUMO_SEMANAL_INDEX, {form: form}, function (error, response, body) {
 
+                // as responses comes in chunks, join them all
                 var total = "";
 
                 debug.http('GET %s', RESUMO_SEMANAL_ESTADO);
 
+                // read information after having form submitted
                 request
                     .get(RESUMO_SEMANAL_ESTADO)
                     .on('error', function(err) {
@@ -61,6 +64,7 @@ var exec = (function () {
                     })
                     .on('end', function (response) {
 
+                        // after getting all data from website, parses it
                         jsdom.env({
                             html: total,
                             src: [jquery],
@@ -69,15 +73,17 @@ var exec = (function () {
                                 var $ = window.$;
                                 var lines = $('table tbody tr');
 
-                                // ignora as 3 primeiras linhas, pois nao sao dados uteis
+                                // ignore 3 first lines
                                 for(var i = 3; i < lines.length; i++) {
 
                                     var line = lines[i],
                                         tds = $(line).find('td'),
                                         obj = {};
 
+                                    // save object fuel type
                                     obj.type = form.selCombustivel.trim().split('*')[1];
 
+                                    // loop to get table data
                                     for(prop in TABLE_POSITION) {
 
                                         var index = TABLE_POSITION[prop];
@@ -112,6 +118,3 @@ var exec = (function () {
 
         });
     };
-})();
-
-module.exports = exec;
