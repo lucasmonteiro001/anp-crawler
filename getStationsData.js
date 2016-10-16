@@ -1,6 +1,6 @@
 var RESUMO_POR_ESTADO = "http://www.anp.gov.br/preco/prc/Resumo_Por_Estado_Index.asp",
     RESUMO_SEMANAL_POSTO = "http://www.anp.gov.br/preco/prc/Resumo_Semanal_Posto.asp",
-    FUEL_CODES = require('./fuel_codes');
+    fs = require('fs');
 var debug = {
     http: require('debug')('http'),
     app: require('debug')('app'),
@@ -9,6 +9,7 @@ var debug = {
     joker: require('debug')('joker')
 };
 
+var jquery = fs.readFileSync("./vendor/jquery-3.1.1.min.js", "utf-8");
 
 var exec = (function(){
 
@@ -59,6 +60,63 @@ var exec = (function(){
                     total += d.toString('utf8');
                 })
                 .on('end', function (response) {
+
+                    jsdom.env({
+                        html: total,
+                        src: [jquery],
+                        done:function (err, window) {
+                            var $ = window.$;
+
+                            var lines = $('span#postos_nota_fiscal div table tbody tr');
+
+                            // ignora as 3 primeiras linhas, pois nao sao dados uteis
+                            for(var i = 1; i < lines.length - 5; i++) {
+
+                                var line = lines[i],
+                                    tds = $(line).find('td'),
+                                    obj = {};
+
+                                obj.type = form.desc_combustivel.trim().split(' ')[1];
+
+                                for(prop in TABLE_POSITION) {
+
+                                    var index = TABLE_POSITION[prop];
+
+                                    if(index === 2) {
+
+                                        var td = $(tds[index]),
+                                            a = td.find('a')[0];
+
+                                        try {
+                                            obj[prop] = a.textContent;
+                                        }
+                                        catch (e) {
+                                            obj[prop] = "-";
+                                        }
+                                    }
+                                    else {
+                                        obj[prop] = tds[index].textContent;
+
+                                        // convert date
+                                        if(index === 8) {
+
+                                            var d = obj[prop].split('/');
+
+                                            obj[prop] = [d[2], d[1], d[0]].join('/');
+                                        }
+                                    }
+                                }
+
+                                array.push(obj);
+                            }
+
+                            debug.end('getStationsData() -> %s', form.selMunicipio);
+
+                            callback(array);
+                        }
+                    });
+
+                    return;
 
                     jsdom.env(
                         total,

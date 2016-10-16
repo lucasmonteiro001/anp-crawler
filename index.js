@@ -96,7 +96,7 @@ var exec = (function () {
     return (function (statesData, i, fuel, fuelIndex) {
 
         // FIXME
-        if(i == 5 || i >= statesData.length) {
+        if(i >= statesData.length) {
 
             return run(++fuelIndex);
         }
@@ -216,7 +216,7 @@ var runStationsData = function (statesData, state, city, fuel, fuelIndex, i) {
 
             stations.map(function (station) {
 
-                db.getStationByNameAndCity(city, station.razaoSocial, function (results) {
+                db.getStationByNameAndCity(city, station, function (results) {
 
                     // if no station exists, add it
                     if(results.rows.length === 0) {

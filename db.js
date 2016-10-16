@@ -17,8 +17,8 @@ var config = {
     password: 'admin', //env var: PGPASSWORD
     host: 'localhost', // Server hosting the postgres database
     port: 5432, //env var: PGPORT
-    max: 10, // max number of clients in the pool
-    idleTimeoutMillis: 30000, // how long a client is allowed to remain idle before being closed
+    max: 40, // max number of clients in the pool
+    idleTimeoutMillis: 2000, // how long a client is allowed to remain idle before being closed
 };
 
 
@@ -194,22 +194,23 @@ var insertFuelPriceByCity = (function () {
 
 var getStationByNameAndCity = (function () {
 
-    return function (city, name, callback) {
+    return function (city, station, callback) {
 
         pool.connect(function(err, client, done) {
 
-            debug.db('getStationByNameAndCity %s', name);
+            debug.db('getStationByNameAndCity %s', station.razaoSocial);
 
-            client.query('SELECT * from stations where name = $1 and city_id = $2', [name, city.id], function(err, result) {
-                //call `done()` to release the client back to the pool
-                done();
+            client.query('SELECT * from stations where name = $1 and address = $2 and city_id = $3',
+                [station.razaoSocial, station.endereco, city.id], function(err, result) {
+                    //call `done()` to release the client back to the pool
+                    done();
 
-                if(err) {
-                    return console.error('error running query', err);
-                }
+                    if(err) {
+                        return console.error('error running query', err);
+                    }
 
-                callback(result);
-            });
+                    callback(result);
+                });
 
         })
     };
@@ -234,7 +235,7 @@ var insertStationByNameAndCity = (function () {
 
                     debug.db('%s inserted station successfuly', station.razaoSocial);
 
-                    getStationByNameAndCity(city, station.razaoSocial, callback);
+                    getStationByNameAndCity(city, station, callback);
                 });
 
         })

@@ -7,6 +7,9 @@ var debug = {
     end: require('debug')('end')
 };
 
+var fs = require('fs'),
+    jquery = fs.readFileSync("./vendor/jquery-3.1.1.min.js", "utf-8");
+
 var TABLE_POSITION = {
     municipio: 0,
     postosPesquisados: 1,
@@ -53,10 +56,10 @@ var exec = (function () {
                     })
                     .on('end', function (response) {
 
-                        jsdom.env(
-                            total,
-                            ["http://code.jquery.com/jquery.js"],
-                            function (err, window) {
+                        jsdom.env({
+                            html: total,
+                            src: [jquery],
+                            done: function (err, window) {
                                 var $ = window.$;
 
                                 var lines = $('table tbody tr');
@@ -98,7 +101,7 @@ var exec = (function () {
 
                                 callback(array)
                             }
-                        );
+                        });
 
                     });
 
