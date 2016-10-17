@@ -1,62 +1,80 @@
 /**
  * Created by lucas on 10/11/16.
  */
-var getStatesData = require('./getStatesData');
-var getCountiesData = require('./getCountiesData');
-var getStationsData = require('./getStationsData');
-var fs = require('fs');
-var debug = {
-    http: require('debug')('http'),
-    app: require('debug')('app'),
-    start: require('debug')('start'),
-    end: require('debug')('end'),
-    db: require('debug')('db')
+var fs = require('fs'),
+    debug = {
+        http: require('debug')('http'),
+        app: require('debug')('app'),
+        start: require('debug')('start'),
+        end: require('debug')('end'),
+        db: require('debug')('db')
+    };
+
+var db = require('./db'), // interface with database
+    getStatesData = require('./getStatesData'),
+    getCountiesData = require('./getCountiesData'),
+    getStationsData = require('./getStationsData');
+
+/**
+ * convert from dd/mm/yyyy to yyyy-mm-dd
+ */
+var toDate = function (date) {
+
+    var arr = date.split('/');
+
+    return [arr[2], arr[1], arr[0]].join('-');
 };
 
 var FUEL_CODES = require('./fuel_codes'),
-    COD_SEMANA = "904",
-    DE = "09/10/2016",
-    DE_DB = "2016-10/09",
-    ATE = "15/10/2016",
-    ATE_DB = "2016-10-15";
+    WEEK_CODE = "904",
+    FROM_DD_MM_YYYY = "09/10/2016",
+    TO_DD_MM_YYYY = "15/10/2016",
+    FROM_YYYY_MM_DD = toDate(FROM_DD_MM_YYYY),
+    TO_YYYY_MM_DD = toDate(TO_DD_MM_YYYY),
+    WRITE_TO_FILE = true; // if wants to print data collected in output.json
 
+// will contain all fuels, hardcoded
 var fuels = [];
 
 for(fuel in FUEL_CODES) {
     fuels.push(FUEL_CODES[fuel]);
 }
 
-
-var db = require('./db');
-
 debug.start('Initializing program');
 
 var final = [];
 
-
+/**
+ * Function that starts collection the data
+ * @param fuelIndex starts at 0 (diesel) and goes until 6 (gnv)
+ */
 var run = function (fuelIndex) {
 
+    // if the last fuel has been collected
     if(fuelIndex > fuels.length - 1) {
-        debug.start('Writing to file');
+        console.timeEnd('start');
 
-        fs.writeFile('./output.json', JSON.stringify(final), function (err) {
-            if(err) {
-                console.log(err);
-            }
-            else {
-                debug.end('Finishing writing to file');
-            }
-        });
-        debug.end('Finishing program');
+        if(WRITE_TO_FILE) {
+            fs.writeFile('./output.json', JSON.stringify(final), function (err) {
+                if(err) {
+                    console.log(err);
+                }
+                else {
+                    debug.end('Finishing writing to file');
+                }
+            });
+        }
+
         return;
     }
 
     var fuel = fuels[fuelIndex];
 
+    // create the form
     var form = {
-        selSemana: COD_SEMANA + "*",
+        selSemana: WEEK_CODE + "*",
         desc_Semana:"",
-        cod_Semana: COD_SEMANA,
+        cod_Semana: WEEK_CODE,
         tipo:"2",
         rdResumo:"2",
         selEstado: "",
@@ -67,6 +85,7 @@ var run = function (fuelIndex) {
 
     getStatesData(form, function (statesData) {
 
+        // loop through it state obtained from the website
         statesData.map(function (state) {
 
             db.getState(state.codigo, function (result) {
@@ -89,13 +108,13 @@ var run = function (fuelIndex) {
     });
 };
 
-run(0);
-
+/**
+ * get cities and stations data
+ */
 var exec = (function () {
 
     return (function (statesData, i, fuel, fuelIndex) {
 
-        // FIXME
         if(i >= statesData.length) {
 
             return run(++fuelIndex);
@@ -105,9 +124,9 @@ var exec = (function () {
         state.cities = [];
 
         var formPerState = {
-            selSemana: COD_SEMANA + "*",
+            selSemana: WEEK_CODE + "*",
             desc_Semana: "",
-            cod_Semana: COD_SEMANA,
+            cod_Semana: WEEK_CODE,
             tipo:"2",
             rdResumo:"2",
             selEstado: state.codigo,
@@ -174,17 +193,17 @@ var exec = (function () {
 
 var runCitiesData = function (statesData, state, city, fuel, fuelIndex, i) {
 
-    db.getFuelPriceByCity(fuel.id, city.id, DE_DB, ATE_DB, function (result) {
+    db.getFuelPriceByCity(fuel.id, city.id, FROM_YYYY_MM_DD, TO_YYYY_MM_DD, function (result) {
 
         // if not city was found, insert it
         if(result.rows.length === 0) {
 
-            db.insertFuelPriceByCity(city, fuel, DE_DB, ATE_DB, function (r) {
+            db.insertFuelPriceByCity(city, fuel, FROM_YYYY_MM_DD, TO_YYYY_MM_DD, function (r) {
 
                 runStationsData(statesData, state, city, fuel, fuelIndex, i);
 
             });
-            
+
         }
         else {
 
@@ -198,8 +217,8 @@ var runCitiesData = function (statesData, state, city, fuel, fuelIndex, i) {
 var runStationsData = function (statesData, state, city, fuel, fuelIndex, i) {
 
     var formPerCounty = {
-        cod_Semana: COD_SEMANA,
-        desc_Semana:"de " + DE +" a " + + ATE,
+        cod_Semana: WEEK_CODE,
+        desc_Semana:"de " + FROM_DD_MM_YYYY +" a " + + TO_DD_MM_YYYY,
         cod_combustivel: fuel.web_id,
         desc_combustivel: fuel.desc,
         selMunicipio: city.codigo,
@@ -269,7 +288,9 @@ var runStationsData = function (statesData, state, city, fuel, fuelIndex, i) {
             if(state.count === 0) {
                 if(i < statesData.length) {
 
-                    final.push(state);
+                    if(WRITE_TO_FILE) {
+                        final.push(state);
+                    }
                     exec(statesData, ++i, fuel, fuelIndex);
                 }
                 else {
@@ -282,6 +303,7 @@ var runStationsData = function (statesData, state, city, fuel, fuelIndex, i) {
     })(fuel);
 };
 
-var toDate = function (date) {
-    return new Date(date.replace('-','/')).toISOString();
-};
+console.time('start');
+
+// starts collecting data by the fuel in index 0 (diesel)
+run(0);

@@ -22,7 +22,7 @@ var CODES = (function () {
         parana: "PR*PARANA",
         pernambuco: "PE*PERNAMBUCO",
         piaui: "PI*PIAUI",
-        rioDeJaneiro: "RJ*RIO@DE@JANEIRO",
+        rioDeJaneiro: "RJ*RIO@FROM_DD_MM_YYYY@JANEIRO",
         rioGrandeDoNorte: "RN*RIO@GRANDE@DO@NORTE",
         rioGrandeDoSul: "RS*RIO@GRANDE@DO@SUL",
         rondonia: "RO*RONDONIA",
